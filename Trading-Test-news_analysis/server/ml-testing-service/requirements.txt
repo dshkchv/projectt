@@ -1,6 +1,0 @@
-Flask
-flask-cors
-torch
-pandas
-numpy
-requests>=2.25.1

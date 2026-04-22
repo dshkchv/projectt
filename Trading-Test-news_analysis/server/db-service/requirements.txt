@@ -1,5 +1,0 @@
-Flask
-flask-cors
-flask-sqlalchemy
-sqlalchemy
-requests
