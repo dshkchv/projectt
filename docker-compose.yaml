@@ -1,0 +1,70 @@
+version: '3.8'
+
+services:
+  frontend:
+    image: node:20-alpine
+    container_name: frontend
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    working_dir: /app
+    command: sh -c "npm install && npm run dev -- --host 0.0.0.0"
+    environment:
+      - VITE_DATALOADER_URL=http://localhost:5000
+      - VITE_TESTING_URL=http://localhost:5001
+      - VITE_BACKEND_URL=http://localhost:8000
+    stdin_open: true
+    tty: true
+    networks:
+      - app-network
+
+  dataloader:
+    build:
+      context: .
+      dockerfile: server/dataloader/dataloader.Dockerfile
+    container_name: dataloader
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./server/dataloader:/app
+    environment:
+      - DATALOADER_ENV=production
+    networks:
+      - app-network
+
+  ml-service:
+    build:
+      context: .
+      dockerfile: server/ml-testing-service/ml-service.Dockerfile
+    container_name: ml-service
+    ports:
+      - "5001:5001"
+    volumes:
+      - ./server/ml-testing-service:/app
+    environment:
+      - ML_ENV=production
+      - BACKEND_URL=http://db-service:8000  # Используем имя сервиса
+    networks:
+      - app-network
+    depends_on:
+      - db-service
+
+  db-service:
+    build:
+      context: .
+      dockerfile: server/db-service/db-service.Dockerfile
+    container_name: db-service
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./server/db-service/data:/app/data
+    environment:
+      - DATABASE_URL=sqlite:////app/data/experiments.db
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge
